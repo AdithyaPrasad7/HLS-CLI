@@ -1,58 +1,64 @@
-use keyring::{Entry, Credential, Result as KeyringResult};
-use thiserror::Error;
+use dirs;
+use std::env;
+use std::fs;
+use std::path::PathBuf;
+use serde::{Serialize, Deserialize};
 use once_cell::sync::Lazy;
-use std::sync::Arc;
 
-#[derive(Debug, Error)]
-pub enum TokenError {
-    #[error("Keyring error: {0}")]
-    Keyring(#[from] keyring::Error),
-    #[error("Token not found")]
-    TokenNotFound,
-    #[error("Failed to parse token")]
-    ParseError,
+#[derive(Serialize, Deserialize, Default)]
+pub struct Config {
+    pub token: Option<String>,
 }
 
-pub struct TokenManager {
-    service: String,
-    username: String,
+pub struct ConfigManager {
+    path: PathBuf,
 }
 
-impl TokenManager {
-    pub fn new(service: &str, username: &str) -> Self {
-        Self {
-            service: service.to_string(),
-            username: username.to_string(),
+impl ConfigManager {
+    pub fn new(app: &str) -> Self {
+        let mut path = env::current_dir().unwrap();
+
+        path.push(".config");
+        path.push(app);
+
+        fs::create_dir_all(&path).unwrap();
+
+        path.push("token.json");
+
+        Self { path }
+    }
+
+    fn load(&self) -> Config {
+        if !self.path.exists() {
+            return Config::default();
         }
+
+        let content = fs::read_to_string(&self.path).unwrap_or_default();
+        serde_json::from_str(&content).unwrap_or_default()
     }
 
-    pub fn set_token(&self, token: &str) -> KeyringResult<()> {
-        let entry = Entry::new(&self.service, &self.username)?;
-        entry.set_password(token)
+     fn save(&self, config: &Config) {
+        let content = serde_json::to_string_pretty(config).unwrap();
+        fs::write(&self.path, content).unwrap();
     }
 
-    pub fn get_token(&self) -> Result<Option<String>, TokenError> {
-        let entry = Entry::new(&self.service, &self.username)
-            .map_err(TokenError::Keyring)?;
-        
-        match entry.get_password() {
-            Ok(token) => Ok(Some(token)),
-            Err(keyring::Error::NoEntry) => Ok(None),
-            Err(e) => Err(TokenError::Keyring(e)),
-        }
+    pub fn set_token(&self, token: &str) {
+        let mut cfg = self.load();
+        cfg.token = Some(token.to_string());
+        self.save(&cfg);
     }
 
-    pub fn delete_token(&self) -> KeyringResult<()> {
-        let entry = Entry::new(&self.service, &self.username)?;
-        entry.delete_credential()
+    pub fn get_token(&self) -> Option<String> {
+        self.load().token
     }
 
-    pub fn has_token(&self) -> Result<bool, TokenError> {
-        Ok(self.get_token()?.is_some())
+    pub fn delete_token(&self) {
+        let mut cfg = self.load();
+        cfg.token = None;
+        self.save(&cfg);
     }
 }
 
 
-pub static TOKEN_MGR: Lazy<Arc<TokenManager>> = Lazy::new(|| {
-    Arc::new(TokenManager::new(env!("CARGO_PKG_NAME"), "token"))
-});
+pub static CONFIG: Lazy<ConfigManager> =
+    Lazy::new(|| ConfigManager::new("hls-cli"));

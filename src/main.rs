@@ -4,20 +4,21 @@ mod client;
 mod model;
 mod config;
 mod token;
+mod ffmpeg;
 
 use clap::Parser;
-use once_cell::sync::Lazy;
 use std::sync::Arc;
+use crate::config::Error;
+use token::ConfigManager;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> { 
+async fn main() -> Result<(), Error> { 
   logger::init_logging();
 
-  let args = commands::cli::Args::parse();
 
-  pub static TOKEN_MGR: Lazy<Arc<token::TokenManager>> = Lazy::new(|| {
-    Arc::new(token::TokenManager::new("HLS-CLI", "default"))
-});
+  
+  let args = commands::cli::Args::parse();
+  commands::dispatch::execute(args);
 
   Ok(())
 }

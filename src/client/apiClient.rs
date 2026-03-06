@@ -4,15 +4,15 @@ use crate::model::apiRequest::ApiRequest;
 
 
 pub struct ApiClient {
-    client: Client,
-    base_url: String,
+  client: Client,
+  base_url: String,
 }
 
 impl ApiClient {
-    pub fn new(base_url: &str) -> Result<Self, reqwest::Error> {
-        let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
-            .build()?;
+  pub fn new(base_url: &str) -> Result<Self, reqwest::Error> {
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()?;
         
         Ok(Self {
             client,
