@@ -1,8 +1,27 @@
-use clap::{Parser};
+use clap::{Parser, Subcommand};
+use crate::model::resolutionDetails::ResolutionDetails;
 
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[derive(Parser)]
+#[command(version, about)]
 pub struct Args {
-    #[arg(short, long)]
-    name: String
+  #[command(subcommand)]
+  pub command: Commands,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+  Auth {
+    #[arg(long)]
+    token: String,
+  },
+  Transcode {
+    #[arg(long)]
+    inputPath: String,
+
+    #[arg(long)]
+    outputPath: Option<String>,
+
+    #[arg(long, value_delimiter = ',')]
+    resolutions: Option<Vec<ResolutionDetails>>,
+  },
 }
