@@ -1,7 +1,8 @@
 use reqwest::{Client, header::HeaderMap, StatusCode};
 use serde::de::DeserializeOwned;
 use indicatif::{ProgressBar, ProgressStyle};
-use crate::model::apiRequest::ApiRequest;
+use crate::model::{apiRequest, apiResponse};
+use crate::client::error::Error;
 
 
 pub struct ApiClient {
@@ -21,7 +22,7 @@ impl ApiClient {
         })
     }
 
-    pub async fn sendRequest<T: DeserializeOwned>(&self, config: ApiRequest) -> Result<T, crate::client::error::Error> {
+    pub async fn sendRequest<T: DeserializeOwned>(&self, config: apiRequest::ApiRequest) -> Result<T, Error> {
 
 			let spinner = if !config.loaderMessage.is_empty() {
 				let spinner = ProgressBar::new_spinner();
@@ -39,7 +40,7 @@ impl ApiClient {
 			};
 			let url = format!("{}{}", self.base_url, config.path.trim_start_matches('/'));
 			let method = reqwest::Method::from_bytes(config.method.as_bytes()).map_err(|e| {
-				crate::client::error::Error::HttpError {
+				Error::HttpError {
 					status: StatusCode::BAD_REQUEST,
 					message: format!("Invalid HTTP method: {}", e),
 				}
@@ -53,13 +54,13 @@ impl ApiClient {
 			let mut headers = HeaderMap::new();
 			for (key, value) in config.headers.iter() {
 				let header_name = key.parse::<reqwest::header::HeaderName>().map_err(|_| {
-					crate::client::error::Error::HttpError {
+					Error::HttpError {
 						status: StatusCode::BAD_REQUEST,
 						message: format!("Invalid header name: {}", key),
 					}
 				})?;
 				let header_value = value.parse::<reqwest::header::HeaderValue>().map_err(|_| {
-					crate::client::error::Error::HttpError {
+					Error::HttpError {
 							status: StatusCode::BAD_REQUEST,
 							message: format!("Invalid header value for {}: {}", key, value),
 					}
@@ -80,14 +81,23 @@ impl ApiClient {
 			}
 			
 			if status.is_success() {
-				Ok(response.json().await?)
+    		let apiResponse: apiResponse::ApiResponse<T> = response.json().await?;
+
+				match apiResponse.data {
+					Some(data) => {
+						Ok(data)},
+					None => Err(Error::HttpError {
+						status,
+						message: "API returned no data".to_string(),
+					}),
+				}
 			} else {
 				let text = response.text().await.unwrap_or_default();
-
+				
 				let message = serde_json::from_str::<serde_json::Value>(&text).ok()
 				.and_then(|json| json["errors"][0]["message"].as_str().map(|s| s.to_string())).unwrap_or(text);
 			
-				Err(crate::client::error::Error::HttpError { status, message })
+				Err(Error::HttpError { status, message })
 			}
     }
 }

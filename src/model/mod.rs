@@ -1,3 +1,4 @@
 pub mod apiRequest;
 pub mod resolutionDetails;
-pub mod tokenReponse;
+pub mod tokenResponse;
+pub mod apiResponse;

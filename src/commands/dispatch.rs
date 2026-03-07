@@ -12,8 +12,8 @@ use crate::client::service::validateToken;
 pub async fn execute(args: Args) -> Result<(), Error> {
   match args.command {
     Commands::Auth { token } => {
-      validateToken(&token).await?;
-      CONFIG.set_token(token.as_str());
+      let response = validateToken(&token).await?;
+      CONFIG.set_token(token.as_str(), response);
       Ok(())
     },
 
