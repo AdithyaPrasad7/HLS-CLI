@@ -4,10 +4,15 @@ use std::fs;
 use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
 use once_cell::sync::Lazy;
+use chrono::{DateTime, Utc};
+
+use crate::model::tokenResponse::TokenDetailsResponse;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Config {
     pub token: Option<String>,
+    pub expiry: Option<DateTime<Utc>>,
+    pub userName: Option<String>
 }
 
 pub struct ConfigManager {
@@ -42,9 +47,11 @@ impl ConfigManager {
         fs::write(&self.path, content).unwrap();
     }
 
-    pub fn set_token(&self, token: &str) {
+    pub fn set_token(&self, token: &str, tokenResponse: TokenDetailsResponse) {
         let mut cfg = self.load();
         cfg.token = Some(token.to_string());
+        cfg.expiry = Some(tokenResponse.expiry);
+        cfg.userName = Some(tokenResponse.userName);
         self.save(&cfg);
     }
 

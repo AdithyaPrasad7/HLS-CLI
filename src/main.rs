@@ -14,11 +14,9 @@ use token::ConfigManager;
 #[tokio::main]
 async fn main() -> Result<(), Error> { 
   logger::init_logging();
-
-
   
   let args = commands::cli::Args::parse();
-  commands::dispatch::execute(args);
+  commands::dispatch::execute(args).await?;
 
   Ok(())
 }

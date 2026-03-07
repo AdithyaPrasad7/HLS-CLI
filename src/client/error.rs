@@ -11,4 +11,9 @@ pub enum Error {
         status: StatusCode, 
         message: String 
     },
+
+    #[error("HTTP error: {message}")]
+    BadRequest { 
+        message: String 
+    },
 }
