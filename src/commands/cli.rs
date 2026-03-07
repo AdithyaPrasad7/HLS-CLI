@@ -1,14 +1,14 @@
 use clap::{Parser, Subcommand};
 use crate::model::resolutionDetails::ResolutionDetails;
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[command(version, about)]
 pub struct Args {
   #[command(subcommand)]
   pub command: Commands,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub enum Commands {
   Auth {
     #[arg(long)]

@@ -1,4 +1,5 @@
 use tracing::{info, error};
+use std::arch::aarch64::vld1_dup_u32;
 use std::path::{Path, PathBuf};
 
 use crate::commands::cli::{Args, Commands};
@@ -6,11 +7,13 @@ use crate::commands::run::transcodeWithQuality;
 use crate::model::resolutionDetails::ResolutionDetails;
 use crate::config::Error;
 use crate::token::CONFIG;
+use crate::client::service::validateToken;
 
-pub fn execute(args: Args) -> Result<(), Error> {
+pub async fn execute(args: Args) -> Result<(), Error> {
   match args.command {
     Commands::Auth { token } => {
-    CONFIG.set_token(token.as_str());
+      validateToken(&token).await?;
+      CONFIG.set_token(token.as_str());
       Ok(())
     },
 
