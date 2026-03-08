@@ -12,7 +12,8 @@ use crate::model::tokenResponse::TokenDetailsResponse;
 pub struct Config {
     pub token: Option<String>,
     pub expiry: Option<DateTime<Utc>>,
-    pub userName: Option<String>
+    pub userName: Option<String>,
+    pub isValid: Option<bool>
 }
 
 pub struct ConfigManager {
@@ -47,22 +48,38 @@ impl ConfigManager {
         fs::write(&self.path, content).unwrap();
     }
 
-    pub fn set_token(&self, token: &str, tokenResponse: TokenDetailsResponse) {
+    pub fn setToken(&self, token: &str, tokenResponse: TokenDetailsResponse) {
         let mut cfg = self.load();
         cfg.token = Some(token.to_string());
         cfg.expiry = Some(tokenResponse.expiry);
         cfg.userName = Some(tokenResponse.userName);
+        cfg.isValid = Some(tokenResponse.isValid);
         self.save(&cfg);
     }
 
-    pub fn get_token(&self) -> Option<String> {
+    pub fn getToken(&self) -> Option<String> {
         self.load().token
     }
 
-    pub fn delete_token(&self) {
+    pub fn deleteToken(&self) {
         let mut cfg = self.load();
         cfg.token = None;
         self.save(&cfg);
+    }
+
+    
+    pub fn isBeforeExpiry(&self) -> bool {
+        let now = Utc::now();
+        match self.load().expiry {
+            Some(expiryTime) => now < expiryTime,
+            None => false,
+        }
+    }
+    
+    pub fn isTokenValid(&self) -> bool {
+        let isTokenValid = self.load().isValid.unwrap_or(false);
+
+        return isTokenValid && self.isBeforeExpiry();
     }
 }
 
