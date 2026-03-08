@@ -22,3 +22,8 @@ strum = { version = "0.26", features = ["derive"] }
 strum_macros = "0.26"
 dirs = "6.0.0"
 indicatif = "0.18.4"
+aws-config = "1.8.15"
+aws-sdk-s3 = "1.125.0"
+aws-credential-types = "1.2.14"
+walkdir = "2.5.0"
+futures = "0.3.32"

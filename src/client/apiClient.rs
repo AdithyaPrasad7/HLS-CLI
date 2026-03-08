@@ -1,6 +1,7 @@
 use reqwest::{Client, header::HeaderMap, StatusCode};
 use serde::de::DeserializeOwned;
 use indicatif::{ProgressBar, ProgressStyle};
+
 use crate::model::{apiRequest, apiResponse};
 use crate::client::error::Error;
 
